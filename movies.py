@@ -21,12 +21,8 @@ class Movie(BaseModel):
     genre: Union[str, None] = None
 
 
-class MovieResponse(BaseModel):
+class MovieResponse(Movie):
     id: int
-    title: str
-    director: str
-    year: int
-    genre: Union[str, None] = None
 
 
 @app.get("/")
@@ -51,24 +47,29 @@ def get_movie(movie_id: int):
     for movie in movies:
         if movie["id"] == movie_id:
             return movie
-    return {"message": "Movie not found"}
+    raise HTTPException(status_code=404, detail="Movie not found")
 
 
 @app.post("/movies")
-def new_movie(movie: Movie):
-    movies.append({"id": max(movie["id"] for movie in movies) + 1 if movies else 1, "title": movie.title, "director": movie.director, "year": movie.year})
+def new_movie(movie_data: Movie):
+    movies.append({"id": max(movie["id"] for movie in movies) + 1 if movies else 1,
+                   "title": movie_data.title,
+                   "director": movie_data.director,
+                   "year": movie_data.year,
+                   "genre": movie_data.genre})
     return {"message": "Movie created"}
 
 
 @app.put("/movies/{movie_id}")
-def update_movie(movie_id: int, movie: Movie):
+def update_movie(movie_id: int, movie_data: Movie):
     for movie in movies:
         if movie["id"] == movie_id:
-            movie["title"] = movie.title
-            movie["director"] = movie.director
-            movie["year"] = movie.year
+            movie["title"] = movie_data.title
+            movie["director"] = movie_data.director
+            movie["year"] = movie_data.year
+            movie["genre"] = movie_data.genre
             return {"message": "Movie updated!"}
-    return {"message": "Movie not found"}
+    raise HTTPException(status_code=404, detail="Movie not found")
 
 
 @app.delete("/movies/{movie_id}")
@@ -78,3 +79,4 @@ def delete_movie(movie_id: int):
             movies.remove(movie)
             return {"message": "Movie deleted!"}
     raise HTTPException(status_code=404, detail="Movie not found")
+
